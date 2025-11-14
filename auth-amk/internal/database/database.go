@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"amk-backend/auth-amk/internal/config"
+	"amk-backend/auth-amk/internal/model"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -55,13 +56,19 @@ func ConnectDatabase(cfg *config.Config) error {
 	return nil
 }
 
-// Nanti diisi AutoMigrate semua tabel (pengguna, peran, dll)
+// AutoMigrate akan memastikan seluruh tabel penting tersedia di database.
 func AutoMigrate() error {
-	// contoh nanti:
-	// return DB.AutoMigrate(
-	//     &model.Pengguna{},
-	//     &model.Peran{},
-	//     ...
-	// )
-	return nil
+	if DB == nil {
+		return fmt.Errorf("database belum terhubung")
+	}
+
+	return DB.AutoMigrate(
+		&model.Pengguna{},
+		&model.Peran{},
+		&model.PenggunaPeran{},
+		&model.HakAkses{},
+		&model.PeranHakAkses{},
+		&model.TokenPenyegar{},
+		&model.ResetKataSandi{},
+	)
 }

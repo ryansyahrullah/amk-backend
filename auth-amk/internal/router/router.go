@@ -1,25 +1,49 @@
 package router
 
 import (
-	"github.com/gin-gonic/gin"
-
+	"amk-backend/auth-amk/internal/config"
 	"amk-backend/auth-amk/internal/handler"
+	"amk-backend/auth-amk/internal/middleware"
+	"amk-backend/auth-amk/internal/repository"
+	"amk-backend/auth-amk/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter() *gin.Engine {
-	r := gin.Default()
+// NewRouter menyiapkan seluruh dependency dan route yang dibutuhkan auth-amk.
+func NewRouter(cfg *config.Config) *gin.Engine {
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(middleware.LoggingMiddleware())
 
-	// Endpoint simple untuk cek service hidup
+	// Repository & service
+	penggunaRepo := repository.NewPenggunaRepository()
+	peranRepo := repository.NewPeranRepository()
+	tokenRepo := repository.NewTokenPenyegarRepository()
+	resetRepo := repository.NewResetKataSandiRepository()
+
+	tokenSvc := service.NewTokenService(cfg)
+	authSvc := service.NewAuthService(penggunaRepo, peranRepo, tokenRepo, tokenSvc)
+	hakSvc := service.NewHakAksesService(penggunaRepo)
+	resetSvc := service.NewResetKataSandiService(penggunaRepo, resetRepo, tokenRepo)
+
+	authHandler := handler.NewAuthHandler(authSvc)
+	lupaHandler := handler.NewLupaSandiHandler(resetSvc)
+	meHandler := handler.NewMeHandler(penggunaRepo, hakSvc)
+
+	// Health check
 	r.GET("/health", handler.HealthHandler)
 
-	// Nanti di sini kita daftarkan:
-	// - POST /auth/login
-	// - POST /auth/refresh
-	// - POST /auth/logout
-	// - POST /auth/lupa-sandi
-	// - POST /auth/atur-sandi-baru
-	// - GET  /auth/me
-	// dengan kontrol role + hak_akses sesuai desain.
+	authGroup := r.Group("/auth")
+	{
+		authGroup.POST("/login", authHandler.Login)
+		authGroup.POST("/refresh", authHandler.Refresh)
+		authGroup.POST("/logout", authHandler.Logout)
+		authGroup.POST("/lupa-sandi", lupaHandler.MintaOTP)
+		authGroup.POST("/atur-sandi-baru", lupaHandler.ResetKataSandi)
+
+		authGroup.GET("/me", middleware.JWTMiddleware(tokenSvc), meHandler.Me)
+	}
 
 	return r
 }
