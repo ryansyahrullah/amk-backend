@@ -1,0 +1,12 @@
+APP_PORT=8081
+APP_ENV=production
+
+DB_HOST=mysql-main
+DB_PORT=3306
+DB_USER=root
+DB_PASS=rootpass
+DB_NAME=hcgs_db
+DB_LOG_MODE=warn
+
+# JWT secret harus sama dengan Auth
+JWT_AKSES_SECRET=super-rahasia-access

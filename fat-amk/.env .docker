@@ -1,0 +1,11 @@
+APP_PORT=8082
+APP_ENV=production
+
+DB_HOST=mysql-main
+DB_PORT=3306
+DB_USER=root
+DB_PASS=rootpass
+DB_NAME=fat_db
+DB_LOG_MODE=warn
+
+JWT_AKSES_SECRET=super-rahasia-access

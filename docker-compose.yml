@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  mysql-main:
+    image: mysql:8.0
+    container_name: mysql-main
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+    command: ["--default-authentication-plugin=mysql_native_password"]
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-main-data:/var/lib/mysql
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-amk/Dockerfile
+    container_name: auth-service
+    depends_on:
+      - mysql-main
+    env_file:
+      - auth-amk/.env.docker
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  hcgs-service:
+    build:
+      context: .
+      dockerfile: hcgs-amk/Dockerfile
+    container_name: hcgs-service
+    depends_on:
+      - mysql-main
+    env_file:
+      - hcgs-amk/.env.docker
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+
+  fat-service:
+    build:
+      context: .
+      dockerfile: fat-amk/Dockerfile
+    container_name: fat-service
+    depends_on:
+      - mysql-main
+    env_file:
+      - fat-amk/.env.docker
+    ports:
+      - "8082:8082"
+    restart: unless-stopped
+
+volumes:
+  mysql-main-data:
