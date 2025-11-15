@@ -11,6 +11,12 @@ services:
       - "3306:3306"
     volumes:
       - mysql-main-data:/var/lib/mysql
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   auth-service:
     build:
@@ -18,7 +24,8 @@ services:
       dockerfile: auth-amk/Dockerfile
     container_name: auth-service
     depends_on:
-      - mysql-main
+      mysql-main:
+        condition: service_healthy
     env_file:
       - auth-amk/.env.docker
     ports:
@@ -31,7 +38,8 @@ services:
       dockerfile: hcgs-amk/Dockerfile
     container_name: hcgs-service
     depends_on:
-      - mysql-main
+      mysql-main:
+        condition: service_healthy
     env_file:
       - hcgs-amk/.env.docker
     ports:
@@ -44,7 +52,8 @@ services:
       dockerfile: fat-amk/Dockerfile
     container_name: fat-service
     depends_on:
-      - mysql-main
+      mysql-main:
+        condition: service_healthy
     env_file:
       - fat-amk/.env.docker
     ports:
