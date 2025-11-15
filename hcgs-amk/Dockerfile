@@ -1,7 +1,7 @@
 # ---------- STAGE 1: BUILD ----------
 FROM golang:1.22-alpine AS builder
 
-WORKDIR /app
+WORKDIR /src
 
 COPY go.mod go.sum ./
 RUN go mod download
@@ -9,16 +9,17 @@ RUN go mod download
 COPY . .
 
 # Build binary khusus hcgs
-RUN go build -o hcgs-service ./hcgs-amk/cmd/hcgs
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -o /out/hcgs-service ./hcgs-amk/cmd/hcgs
 
 # ---------- STAGE 2: RUNTIME ----------
 FROM alpine:3.19
 
 WORKDIR /app
 
-COPY --from=builder /app/hcgs-service .
+COPY --from=builder /out/hcgs-service /app/hcgs-service
 
 EXPOSE 8081
 
-CMD ["./hcgs-service"]
+ENTRYPOINT ["/app/hcgs-service"]
 

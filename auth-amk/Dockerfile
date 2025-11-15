@@ -1,7 +1,7 @@
 # ---------- STAGE 1: BUILD ----------
 FROM golang:1.22-alpine AS builder
 
-WORKDIR /app
+WORKDIR /src
 
 # Copy dependency info dari root monorepo
 COPY go.mod go.sum ./
@@ -11,7 +11,8 @@ RUN go mod download
 COPY . .
 
 # Build binary khusus auth
-RUN go build -o auth-service ./auth-amk/cmd/auth
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -o /out/auth-service ./auth-amk/cmd/auth
 
 # ---------- STAGE 2: RUNTIME ----------
 FROM alpine:3.19
@@ -19,8 +20,8 @@ FROM alpine:3.19
 WORKDIR /app
 
 # copy binary dari builder
-COPY --from=builder /app/auth-service .
+COPY --from=builder /out/auth-service /app/auth-service
 
 EXPOSE 8080
 
-CMD ["./auth-service"]
+ENTRYPOINT ["/app/auth-service"]
